@@ -16,7 +16,7 @@ class _AppShellState extends State<AppShell> {
   final List<Widget> _screens = const [
     DashboardScreen(),
     TaskScreen(),
-    Placeholder(),
+    Placeholder(color: Colors.red),
     Placeholder(),
   ];
 

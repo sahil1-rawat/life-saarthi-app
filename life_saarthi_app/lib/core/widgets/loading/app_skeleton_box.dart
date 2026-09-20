@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 class AppSkeletonBox extends StatefulWidget {
   const AppSkeletonBox({
     super.key,
-    required this.width,
+    this.width,
     required this.height,
     this.borderRadius = 8,
   });
 
-  final double width;
+  final double? width;
   final double height;
   final double borderRadius;
 
@@ -27,7 +27,7 @@ class _AppSkeletonBoxState extends State<AppSkeletonBox>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    )..repeat();
+    )..repeat(reverse: true);
   }
 
   @override
@@ -38,24 +38,18 @@ class _AppSkeletonBoxState extends State<AppSkeletonBox>
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = Theme.of(context).colorScheme.surfaceContainerHighest;
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            color: Color.lerp(
-              colorScheme.surfaceContainerHighest,
-              colorScheme.surface,
-              _controller.value,
-            ),
-          ),
-        );
-      },
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.45, end: 0.85).animate(_controller),
+      child: Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: baseColor,
+          borderRadius: BorderRadius.circular(widget.borderRadius),
+        ),
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:life_saarthi_app/core/services/time_service.dart';
 import 'package:life_saarthi_app/features/tasks/data/repositories/task_repository.dart';
+import 'package:life_saarthi_app/features/tasks/presentation/widgets/task_list_skeleton.dart';
 
 import '../data/models/task.dart';
 
@@ -26,6 +27,7 @@ class _TaskScreenState extends State<TaskScreen> {
   }
 
   Future<void> _loadTasks() async {
+    await Future.delayed(const Duration(seconds: 2));
     final tasks = await _repository.getTasks();
 
     if (!mounted) {
@@ -83,7 +85,7 @@ class _TaskScreenState extends State<TaskScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Tasks')),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const TaskListSkeleton()
           : _tasks.isEmpty
           ? _buildEmptyState()
           : ListView.separated(
