@@ -17,8 +17,9 @@ class TimeInitializer {
       TimeService.instance.synchronize(serverTime);
 
       debugPrint('SERVER TIME SYNC SUCCESS: $serverTime');
-    } catch (e) {
-      debugPrint('SERVER TIME SYNC FAILED: $e');
+    } catch (e, stackTrace) {
+      debugPrint('❌ SERVER TIME SYNC FAILED: $e');
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
 }

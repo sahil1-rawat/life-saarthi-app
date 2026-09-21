@@ -29,15 +29,24 @@ class Task {
     TaskPriority? priority,
     TaskStatus? status,
     DateTime? dueDate,
+
+    bool clearDescription = false,
+    bool clearDueDate = false,
   }) {
     return Task(
       id: id,
+
       title: title ?? this.title,
-      description: description ?? this.description,
+
+      description: clearDescription ? null : description ?? this.description,
+
       priority: priority ?? this.priority,
+
       status: status ?? this.status,
+
       createdAt: createdAt,
-      dueDate: dueDate ?? this.dueDate,
+
+      dueDate: clearDueDate ? null : dueDate ?? this.dueDate,
     );
   }
 }
