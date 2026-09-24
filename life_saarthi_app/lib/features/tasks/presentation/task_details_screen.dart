@@ -83,18 +83,23 @@ class TaskDetailsScreen extends ConsumerWidget {
           if (currentTask.description != null &&
               currentTask.description!.isNotEmpty) ...[
             Text('Description', style: Theme.of(context).textTheme.titleMedium),
+
             const SizedBox(height: 8),
+
             Text(
               currentTask.description!,
               style: Theme.of(context).textTheme.bodyLarge,
             ),
+
             const SizedBox(height: 24),
           ],
 
           // Due date
           if (currentTask.dueDate != null) ...[
             Text('Due date', style: Theme.of(context).textTheme.titleMedium),
+
             const SizedBox(height: 8),
+
             Row(
               children: [
                 Icon(
@@ -102,19 +107,64 @@ class TaskDetailsScreen extends ConsumerWidget {
                   size: 20,
                   color: Theme.of(context).colorScheme.primary,
                 ),
+
                 const SizedBox(width: 8),
-                Text(
-                  DateTimeUtils.formatTaskDueDate(currentTask.dueDate!),
-                  style: Theme.of(context).textTheme.bodyLarge,
+
+                Expanded(
+                  child: Text(
+                    // CHANGED:
+                    // Task details always shows the actual due date.
+                    // It does NOT show "Overdue" here.
+                    DateTimeUtils.formatDate(currentTask.dueDate!.toLocal()),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                 ),
               ],
             ),
+
+            const SizedBox(height: 24),
+          ],
+
+          // CHANGED:
+          // Show the actual completion date when the task
+          // has been completed.
+          if (currentTask.completedAt != null) ...[
+            Text(
+              'Completed on',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+
+            const SizedBox(height: 8),
+
+            Row(
+              children: [
+                Icon(
+                  Icons.check_circle_outline,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+
+                const SizedBox(width: 8),
+
+                Expanded(
+                  child: Text(
+                    DateTimeUtils.formatDateTime(
+                      currentTask.completedAt!.toLocal(),
+                    ),
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              ],
+            ),
+
             const SizedBox(height: 24),
           ],
 
           // Created date
           Text('Created', style: Theme.of(context).textTheme.titleMedium),
+
           const SizedBox(height: 8),
+
           Text(
             DateTimeUtils.formatDateTime(currentTask.createdAt.toLocal()),
             style: Theme.of(context).textTheme.bodyMedium,

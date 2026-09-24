@@ -29,6 +29,10 @@ abstract final class DateTimeUtils {
       return 'Due tomorrow';
     }
 
+    if (localDate.isBefore(TimeService.instance.today)) {
+      return 'Overdue · ${formatDate(localDate)}';
+    }
+
     return 'Due ${formatDate(localDate)}';
   }
 }

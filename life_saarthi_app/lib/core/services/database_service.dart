@@ -14,16 +14,28 @@ class DatabaseService {
     }
 
     _database = await _initDatabase();
-
     return _database!;
   }
 
   Future<Database> _initDatabase() async {
     final databasePath = await getDatabasesPath();
-
     final path = join(databasePath, 'life_saarthi.db');
 
-    return openDatabase(path, version: 1, onCreate: _onCreate);
+    return openDatabase(
+      path,
+
+      // CHANGED:
+      // Database version increased from 1 to 2
+      // because completed_at was added.
+      version: 2,
+
+      onCreate: _onCreate,
+
+      // CHANGED:
+      // Handles existing installations that already
+      // have version 1 of the database.
+      onUpgrade: _onUpgrade,
+    );
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -35,8 +47,17 @@ class DatabaseService {
         priority TEXT NOT NULL,
         status TEXT NOT NULL,
         created_at TEXT NOT NULL,
-        due_date TEXT
+        due_date TEXT,
+        completed_at TEXT
       )
     ''');
+  }
+
+  // CHANGED:
+  // Migration from database version 1 → 2.
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE tasks ADD COLUMN completed_at TEXT');
+    }
   }
 }

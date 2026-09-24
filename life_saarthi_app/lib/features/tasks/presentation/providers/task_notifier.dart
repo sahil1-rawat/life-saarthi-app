@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+import '../../../../core/services/time_service.dart';
 import '../../data/models/task.dart';
 import '../../data/repositories/task_repository.dart';
 
@@ -8,10 +9,7 @@ final taskNotifierProvider = AsyncNotifierProvider<TaskNotifier, List<Task>>(
   TaskNotifier.new,
 );
 
-// CHANGED:
-// Each task gets its own mutation state.
-// false = idle
-// true = currently being updated/deleted
+// Per-task mutation state.
 final taskMutationProvider = StateProvider.family<bool, String>(
   (ref, taskId) => false,
 );
@@ -71,8 +69,6 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
   }
 
   Future<void> toggleTask(Task task) async {
-    // CHANGED:
-    // Read mutation state without rebuilding the notifier.
     final mutationState = ref.read(taskMutationProvider(task.id).notifier);
 
     if (mutationState.state) {
@@ -81,9 +77,15 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
 
     final currentTasks = state.value ?? [];
 
-    final updatedTask = task.copyWith(
-      status: task.isCompleted ? TaskStatus.pending : TaskStatus.completed,
-    );
+    // CHANGED:
+    // When completing a task, capture the server-authoritative
+    // time from TimeService.
+    final updatedTask = task.isCompleted
+        ? task.copyWith(status: TaskStatus.pending, clearCompletedAt: true)
+        : task.copyWith(
+            status: TaskStatus.completed,
+            completedAt: TimeService.instance.nowUtc,
+          );
 
     mutationState.state = true;
 
@@ -96,7 +98,6 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
         }).toList(),
       );
     } catch (error) {
-      // Keep the previous state if database update fails.
       state = AsyncData(currentTasks);
 
       rethrow;
@@ -121,7 +122,6 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
 
       state = AsyncData(currentTasks.where((task) => task.id != id).toList());
     } catch (error) {
-      // Keep the task visible if deletion fails.
       state = AsyncData(currentTasks);
 
       rethrow;

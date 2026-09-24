@@ -20,6 +20,9 @@ class TaskRepository {
       'status': task.status.name,
       'created_at': task.createdAt.toUtc().toIso8601String(),
       'due_date': task.dueDate?.toUtc().toIso8601String(),
+
+      // CHANGED:
+      'completed_at': task.completedAt?.toUtc().toIso8601String(),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -42,6 +45,9 @@ class TaskRepository {
         'priority': task.priority.name,
         'status': task.status.name,
         'due_date': task.dueDate?.toUtc().toIso8601String(),
+
+        // CHANGED:
+        'completed_at': task.completedAt?.toUtc().toIso8601String(),
       },
       where: 'id = ?',
       whereArgs: [task.id],
@@ -65,6 +71,11 @@ class TaskRepository {
       dueDate: row['due_date'] == null
           ? null
           : DateTime.parse(row['due_date'] as String).toUtc(),
+
+      // CHANGED:
+      completedAt: row['completed_at'] == null
+          ? null
+          : DateTime.parse(row['completed_at'] as String).toUtc(),
     );
   }
 }

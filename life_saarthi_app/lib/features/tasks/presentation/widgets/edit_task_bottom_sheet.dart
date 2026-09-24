@@ -69,6 +69,8 @@ class _EditTaskBottomSheetState extends State<EditTaskBottomSheet> {
   }
 
   Future<void> _save() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -119,162 +121,168 @@ class _EditTaskBottomSheetState extends State<EditTaskBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 12,
-          bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
-        ),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Text(
-                  'Edit Task',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-
-                const SizedBox(height: 20),
-
-                TextFormField(
-                  controller: _titleController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Task title',
-                    prefixIcon: Icon(Icons.task_alt),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a task title';
-                    }
-
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _descriptionController,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    prefixIcon: Icon(Icons.notes_outlined),
-                    alignLabelWithHint: true,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                Text(
-                  'Priority',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-
-                const SizedBox(height: 8),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: PriorityOption(
-                        label: 'Low',
-                        value: TaskPriority.low,
-                        selected: _selectedPriority == TaskPriority.low,
-                        onTap: () {
-                          setState(() {
-                            _selectedPriority = TaskPriority.low;
-                          });
-                        },
+    return GestureDetector(
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      behavior: HitTestBehavior.translucent,
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 12,
+            bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+          ),
+          child: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(4),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: PriorityOption(
-                        label: 'Medium',
-                        value: TaskPriority.medium,
-                        selected: _selectedPriority == TaskPriority.medium,
-                        onTap: () {
-                          setState(() {
-                            _selectedPriority = TaskPriority.medium;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: PriorityOption(
-                        label: 'High',
-                        value: TaskPriority.high,
-                        selected: _selectedPriority == TaskPriority.high,
-                        onTap: () {
-                          setState(() {
-                            _selectedPriority = TaskPriority.high;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(Icons.calendar_today_outlined),
-                  title: const Text('Due date'),
-                  subtitle: Text(
-                    _selectedDueDate == null
-                        ? 'No due date'
-                        : _formatDate(_selectedDueDate!),
                   ),
-                  trailing: _selectedDueDate == null
-                      ? const Icon(Icons.chevron_right)
-                      : IconButton(
-                          onPressed: () {
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    'Edit Task',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  TextFormField(
+                    controller: _titleController,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Task title',
+                      prefixIcon: Icon(Icons.task_alt),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a task title';
+                      }
+
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _descriptionController,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      labelText: 'Description',
+                      prefixIcon: Icon(Icons.notes_outlined),
+                      alignLabelWithHint: true,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text(
+                    'Priority',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: PriorityOption(
+                          label: 'Low',
+                          value: TaskPriority.low,
+                          selected: _selectedPriority == TaskPriority.low,
+                          onTap: () {
                             setState(() {
-                              _selectedDueDate = null;
+                              _selectedPriority = TaskPriority.low;
                             });
                           },
-                          icon: const Icon(Icons.clear),
                         ),
-                  onTap: _selectDueDate,
-                ),
-
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _isSaving ? null : _save,
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Save Changes'),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: PriorityOption(
+                          label: 'Medium',
+                          value: TaskPriority.medium,
+                          selected: _selectedPriority == TaskPriority.medium,
+                          onTap: () {
+                            setState(() {
+                              _selectedPriority = TaskPriority.medium;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: PriorityOption(
+                          label: 'High',
+                          value: TaskPriority.high,
+                          selected: _selectedPriority == TaskPriority.high,
+                          onTap: () {
+                            setState(() {
+                              _selectedPriority = TaskPriority.high;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: 20),
+
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.calendar_today_outlined),
+                    title: const Text('Due date'),
+                    subtitle: Text(
+                      _selectedDueDate == null
+                          ? 'No due date'
+                          : _formatDate(_selectedDueDate!),
+                    ),
+                    trailing: _selectedDueDate == null
+                        ? const Icon(Icons.chevron_right)
+                        : IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _selectedDueDate = null;
+                              });
+                            },
+                            icon: const Icon(Icons.clear),
+                          ),
+                    onTap: _selectDueDate,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _isSaving ? null : _save,
+                      child: _isSaving
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Save Changes'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
