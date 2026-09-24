@@ -12,6 +12,7 @@ import '../../tasks/presentation/providers/task_notifier.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
+
   // CHANGED:
   // Selects one shlok based on the server-synchronized calendar date.
   // The same shlok remains visible throughout the same day.
@@ -30,7 +31,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // CHANGED:
-    // Dashboard now listens to the real Task state.
+    // Dashboard listens to the real Task state.
     final taskState = ref.watch(taskNotifierProvider);
 
     return AnimatedBuilder(
@@ -41,41 +42,114 @@ class DashboardScreen extends ConsumerWidget {
 
         return Scaffold(
           body: SafeArea(
-            child: CustomScrollView(
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      _buildHeader(context, currentTime),
+            child: RefreshIndicator(
+              // CHANGED:
+              // Pull-to-refresh reloads the latest task data from SQLite.
+              onRefresh: () async {
+                try {
+                  await ref.read(taskNotifierProvider.notifier).refreshTasks();
+                } catch (_) {
+                  if (!context.mounted) {
+                    return;
+                  }
 
-                      const SizedBox(height: 28),
-                      // CHANGED:
-                      // Daily Bhagavad Gita shlok.
-                      DailyGeetaCard(shlok: _getTodayShlok(currentTime)),
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Unable to refresh tasks. Please try again.',
+                      ),
+                    ),
+                  );
+                }
+              },
 
-                      const SizedBox(height: 28),
-                      // CHANGED:
-                      // Pass the current task state to the overview.
-                      _buildOverview(context, taskState),
+              child: CustomScrollView(
+                // CHANGED:
+                // Allows pull-to-refresh even when there is not
+                // enough content to naturally scroll.
+                physics: const AlwaysScrollableScrollPhysics(),
 
-                      const SizedBox(height: 28),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        _buildHeader(context, currentTime),
 
-                      _buildQuickActions(context, ref),
+                        const SizedBox(height: 28),
 
-                      const SizedBox(height: 28),
+                        // CHANGED:
+                        // Daily Bhagavad Gita shlok.
+                        DailyGeetaCard(shlok: _getTodayShlok(currentTime)),
 
-                      // CHANGED:
-                      // Pass the task state and current server time.
-                      _buildTodayFocus(context, taskState, currentTime),
-                    ]),
+                        const SizedBox(height: 28),
+
+                        // CHANGED:
+                        // Handle loading, error and loaded states
+                        // for the task-based dashboard sections.
+                        _buildTaskContent(context, ref, taskState, currentTime),
+
+                        const SizedBox(height: 28),
+
+                        _buildQuickActions(context, ref),
+                      ]),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  // CHANGED:
+  // Centralizes the task loading/error/success states.
+  Widget _buildTaskContent(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<Task>> taskState,
+    DateTime currentTime,
+  ) {
+    // Initial task loading.
+    if (taskState.isLoading && !taskState.hasValue) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildOverviewSkeleton(context),
+
+          const SizedBox(height: 28),
+
+          _buildTodayFocusSkeleton(context),
+        ],
+      );
+    }
+
+    // Task loading failed and there is no previous data available.
+    if (taskState.hasError && !taskState.hasValue) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildTaskError(context, ref),
+
+          const SizedBox(height: 28),
+
+          Text("Today's Focus", style: Theme.of(context).textTheme.titleLarge),
+        ],
+      );
+    }
+
+    // Normal loaded state.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildOverview(context, taskState),
+
+        const SizedBox(height: 28),
+
+        _buildTodayFocus(context, taskState, currentTime),
+      ],
     );
   }
 
@@ -117,7 +191,7 @@ class DashboardScreen extends ConsumerWidget {
   }
 
   // CHANGED:
-  // Dashboard overview now receives AsyncValue<List<Task>>.
+  // Dashboard overview receives AsyncValue<List<Task>>.
   Widget _buildOverview(
     BuildContext context,
     AsyncValue<List<Task>> taskState,
@@ -161,7 +235,7 @@ class DashboardScreen extends ConsumerWidget {
               child: _OverviewCard(
                 icon: Icons.task_alt,
                 title: 'Total',
-                value: taskState.isLoading ? '...' : '$totalTasks',
+                value: '$totalTasks',
               ),
             ),
 
@@ -171,7 +245,7 @@ class DashboardScreen extends ConsumerWidget {
               child: _OverviewCard(
                 icon: Icons.pending_actions_outlined,
                 title: 'Pending',
-                value: taskState.isLoading ? '...' : '$pendingTasks',
+                value: '$pendingTasks',
               ),
             ),
           ],
@@ -185,7 +259,7 @@ class DashboardScreen extends ConsumerWidget {
               child: _OverviewCard(
                 icon: Icons.check_circle_outline,
                 title: 'Completed',
-                value: taskState.isLoading ? '...' : '$completedTasks',
+                value: '$completedTasks',
               ),
             ),
 
@@ -195,12 +269,102 @@ class DashboardScreen extends ConsumerWidget {
               child: _OverviewCard(
                 icon: Icons.today_outlined,
                 title: 'Due Today',
-                value: taskState.isLoading ? '...' : '$todayTasks',
+                value: '$todayTasks',
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+
+  // CHANGED:
+  // Initial Dashboard skeleton for Overview.
+  Widget _buildOverviewSkeleton(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Overview', style: Theme.of(context).textTheme.titleLarge),
+
+        const SizedBox(height: 14),
+
+        Row(
+          children: [
+            Expanded(child: const _OverviewSkeletonCard()),
+
+            const SizedBox(width: 12),
+
+            Expanded(child: const _OverviewSkeletonCard()),
+          ],
+        ),
+
+        const SizedBox(height: 12),
+
+        Row(
+          children: [
+            Expanded(child: const _OverviewSkeletonCard()),
+
+            const SizedBox(width: 12),
+
+            Expanded(child: const _OverviewSkeletonCard()),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // CHANGED:
+  // Error state shown when task loading completely fails.
+  Widget _buildTaskError(BuildContext context, WidgetRef ref) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Icon(Icons.cloud_off_outlined, size: 40, color: AppColors.error),
+
+            const SizedBox(height: 14),
+
+            Text(
+              'Unable to load your tasks',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              'Something went wrong while loading your task data.',
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+
+            const SizedBox(height: 16),
+
+            FilledButton.icon(
+              onPressed: () async {
+                try {
+                  await ref.read(taskNotifierProvider.notifier).refreshTasks();
+                } catch (_) {
+                  if (!context.mounted) {
+                    return;
+                  }
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Unable to load tasks. Please try again.'),
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -216,7 +380,6 @@ class DashboardScreen extends ConsumerWidget {
           spacing: 12,
           runSpacing: 12,
           children: [
-            // CHANGED:
             _QuickActionButton(
               icon: Icons.add_task,
               label: 'Task',
@@ -237,16 +400,19 @@ class DashboardScreen extends ConsumerWidget {
                 );
               },
             ),
+
             _QuickActionButton(
               icon: Icons.account_balance_wallet_outlined,
               label: 'Expense',
               onTap: () {},
             ),
+
             _QuickActionButton(
               icon: Icons.note_alt_outlined,
               label: 'Note',
               onTap: () {},
             ),
+
             _QuickActionButton(
               icon: Icons.auto_awesome,
               label: 'Ask Saarthi',
@@ -266,6 +432,7 @@ class DashboardScreen extends ConsumerWidget {
     DateTime currentTime,
   ) {
     final tasks = taskState.value ?? [];
+
     final todayTasks = tasks.where((task) {
       if (task.dueDate == null) {
         return false;
@@ -286,14 +453,7 @@ class DashboardScreen extends ConsumerWidget {
 
         const SizedBox(height: 14),
 
-        if (taskState.isLoading)
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          )
-        else if (todayTasks.isEmpty)
+        if (todayTasks.isEmpty)
           _buildEmptyTodayFocus(context)
         else
           ...todayTasks
@@ -304,6 +464,25 @@ class DashboardScreen extends ConsumerWidget {
                   child: _TodayFocusCard(task: task),
                 ),
               ),
+      ],
+    );
+  }
+
+  // CHANGED:
+  // Skeleton shown while tasks are initially loading.
+  Widget _buildTodayFocusSkeleton(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Today's Focus", style: Theme.of(context).textTheme.titleLarge),
+
+        const SizedBox(height: 14),
+
+        const _TodayFocusSkeletonCard(),
+
+        const SizedBox(height: 10),
+
+        const _TodayFocusSkeletonCard(),
       ],
     );
   }
@@ -406,6 +585,7 @@ class _OverviewCard extends StatelessWidget {
             // Show additional information only when available.
             if (subtitle != null) ...[
               const SizedBox(height: 4),
+
               Text(
                 subtitle!,
                 style: Theme.of(
@@ -415,6 +595,120 @@ class _OverviewCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+// CHANGED:
+// Small local skeleton specifically for Dashboard Overview.
+// It is kept local because this shape is currently Dashboard-specific.
+class _OverviewSkeletonCard extends StatelessWidget {
+  const _OverviewSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SkeletonBlock(
+              width: 24,
+              height: 24,
+              color: colorScheme.surfaceContainerHighest,
+            ),
+
+            const SizedBox(height: 14),
+
+            _SkeletonBlock(
+              width: 50,
+              height: 28,
+              color: colorScheme.surfaceContainerHighest,
+            ),
+
+            const SizedBox(height: 6),
+
+            _SkeletonBlock(
+              width: 70,
+              height: 14,
+              color: colorScheme.surfaceContainerHighest,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// CHANGED:
+// Skeleton for Today's Focus.
+class _TodayFocusSkeletonCard extends StatelessWidget {
+  const _TodayFocusSkeletonCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            _SkeletonBlock(
+              width: 24,
+              height: 24,
+              radius: 12,
+              color: colorScheme.surfaceContainerHighest,
+            ),
+
+            const SizedBox(width: 14),
+
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SkeletonBlock(width: double.infinity, height: 16),
+
+                  SizedBox(height: 8),
+
+                  _SkeletonBlock(width: 140, height: 12),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// CHANGED:
+// Generic local skeleton block used only by Dashboard loading states.
+class _SkeletonBlock extends StatelessWidget {
+  const _SkeletonBlock({
+    required this.width,
+    required this.height,
+    this.radius = 6,
+    this.color,
+  });
+
+  final double width;
+  final double height;
+  final double radius;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: color ?? Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(radius),
       ),
     );
   }
@@ -442,7 +736,7 @@ class _QuickActionButton extends StatelessWidget {
 }
 
 // CHANGED:
-// New feature-specific widget for displaying a task
+// Feature-specific widget for displaying a task
 // inside Today's Focus.
 class _TodayFocusCard extends StatelessWidget {
   const _TodayFocusCard({required this.task});
@@ -474,6 +768,7 @@ class _TodayFocusCard extends StatelessWidget {
                   if (task.description != null &&
                       task.description!.isNotEmpty) ...[
                     const SizedBox(height: 4),
+
                     Text(
                       task.description!,
                       maxLines: 1,

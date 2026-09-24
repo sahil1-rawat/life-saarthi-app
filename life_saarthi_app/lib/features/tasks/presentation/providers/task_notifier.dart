@@ -24,6 +24,26 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
     return _repository.getTasks();
   }
 
+  // CHANGED:
+  // Reload tasks from SQLite without recreating the provider.
+  //
+  // This is used by pull-to-refresh and other places
+  // that need the latest local database state.
+  Future<void> refreshTasks() async {
+    try {
+      final tasks = await _repository.getTasks();
+
+      state = AsyncData(tasks);
+    } catch (error, stackTrace) {
+      // CHANGED:
+      // Preserve the error state so the UI can show
+      // an appropriate retry/error message.
+      state = AsyncError(error, stackTrace);
+
+      rethrow;
+    }
+  }
+
   Future<void> addTask(Task task) async {
     final currentTasks = state.value ?? [];
 
