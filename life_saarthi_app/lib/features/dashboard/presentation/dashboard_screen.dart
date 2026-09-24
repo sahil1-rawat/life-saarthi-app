@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:life_saarthi_app/core/widgets/daily_geeta_card.dart';
+import 'package:life_saarthi_app/features/dashboard/data/daily_geeta_shloks.dart';
 import 'package:life_saarthi_app/features/tasks/presentation/widgets/add_task_bottom_sheet.dart';
 
 import '../../../app/theme/app_colors.dart';
@@ -10,6 +12,20 @@ import '../../tasks/presentation/providers/task_notifier.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
+  // CHANGED:
+  // Selects one shlok based on the server-synchronized calendar date.
+  // The same shlok remains visible throughout the same day.
+  DailyGeetaShlok _getTodayShlok(DateTime currentTime) {
+    final dayNumber = DateTime(
+      currentTime.year,
+      currentTime.month,
+      currentTime.day,
+    ).difference(DateTime(2026, 1, 1)).inDays;
+
+    final index = dayNumber % dailyGeetaShloks.length;
+
+    return dailyGeetaShloks[index];
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -34,7 +50,11 @@ class DashboardScreen extends ConsumerWidget {
                       _buildHeader(context, currentTime),
 
                       const SizedBox(height: 28),
+                      // CHANGED:
+                      // Daily Bhagavad Gita shlok.
+                      DailyGeetaCard(shlok: _getTodayShlok(currentTime)),
 
+                      const SizedBox(height: 28),
                       // CHANGED:
                       // Pass the current task state to the overview.
                       _buildOverview(context, taskState),
