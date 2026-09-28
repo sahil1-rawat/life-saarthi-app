@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:life_saarthi_app/features/insights/presentation/insights_screen.dart';
 import 'package:life_saarthi_app/features/tasks/presentation/task_screen.dart';
 
 import '../features/dashboard/presentation/dashboard_screen.dart';
@@ -16,8 +17,8 @@ class _AppShellState extends State<AppShell> {
   final List<Widget> _screens = const [
     DashboardScreen(),
     TaskScreen(),
+    InsightsScreen(),
     Placeholder(color: Colors.red),
-    Placeholder(),
   ];
 
   @override
