@@ -1,8 +1,12 @@
 import '../../../tasks/data/models/task.dart';
-import 'weekly_productivity.dart';
+import 'recent_productivity.dart';
 
-class WeeklyProductivityCalculator {
-  static WeeklyProductivity calculate(List<Task> tasks, {DateTime? now}) {
+class RecentProductivityCalculator {
+  static RecentProductivity calculate(
+    List<Task> tasks, {
+    DateTime? now,
+    int days = 7,
+  }) {
     final currentDate = (now ?? DateTime.now()).toLocal();
 
     final today = DateTime(
@@ -11,15 +15,9 @@ class WeeklyProductivityCalculator {
       currentDate.day,
     );
 
-    // Monday = 1, Sunday = 7.
-    final weekStart = today.subtract(
-      Duration(days: today.weekday - DateTime.monday),
-    );
-
-    final weekEnd = weekStart.add(const Duration(days: 6));
-
-    final dailyData = List.generate(7, (index) {
-      final date = weekStart.add(Duration(days: index));
+    final startDate = today.subtract(Duration(days: days - 1));
+    final dailyData = List.generate(days, (index) {
+      final date = startDate.add(Duration(days: index));
 
       final completedCount = tasks.where((task) {
         if (!task.isCompleted || task.completedAt == null) {
@@ -36,9 +34,9 @@ class WeeklyProductivityCalculator {
       return DailyProductivity(date: date, completedTasks: completedCount);
     });
 
-    return WeeklyProductivity(
-      weekStart: weekStart,
-      weekEnd: weekEnd,
+    return RecentProductivity(
+      startDate: startDate,
+      endDate: today,
       dailyData: dailyData,
     );
   }

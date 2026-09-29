@@ -149,4 +149,125 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
       mutationState.state = false;
     }
   }
+
+  // fn for loading testing data
+  void loadDebugInsightsData() {
+    final now = DateTime.now();
+
+    DateTime day(int daysAgo) {
+      final date = now.subtract(Duration(days: daysAgo));
+
+      return DateTime(date.year, date.month, date.day, 10, 0);
+    }
+
+    final tasks = <Task>[
+      // ─────────────────────────────────────────
+      // CURRENT 12-DAY STREAK
+      // ─────────────────────────────────────────
+
+      for (var daysAgo = 0; daysAgo < 12; daysAgo++)
+        Task(
+          id: 'debug-streak-$daysAgo',
+          title: 'Streak Task ${daysAgo + 1}',
+          description: 'Debug productivity task',
+          priority: TaskPriority.medium,
+          status: TaskStatus.completed,
+          createdAt: day(daysAgo),
+          completedAt: day(daysAgo),
+        ),
+
+      // ─────────────────────────────────────────
+      // EXTRA COMPLETED TASKS
+      // ─────────────────────────────────────────
+      Task(
+        id: 'debug-today-1',
+        title: 'Complete project work',
+        priority: TaskPriority.high,
+        status: TaskStatus.completed,
+        createdAt: day(0),
+        completedAt: day(0),
+      ),
+
+      Task(
+        id: 'debug-today-2',
+        title: 'Review code',
+        priority: TaskPriority.low,
+        status: TaskStatus.completed,
+        createdAt: day(0),
+        completedAt: day(0),
+      ),
+
+      Task(
+        id: 'debug-yesterday-1',
+        title: 'Read documentation',
+        priority: TaskPriority.medium,
+        status: TaskStatus.completed,
+        createdAt: day(1),
+        completedAt: day(1),
+      ),
+
+      Task(
+        id: 'debug-yesterday-2',
+        title: 'Practice Flutter',
+        priority: TaskPriority.high,
+        status: TaskStatus.completed,
+        createdAt: day(1),
+        completedAt: day(1),
+      ),
+
+      // ─────────────────────────────────────────
+      // OVERDUE TASKS
+      // ─────────────────────────────────────────
+      Task(
+        id: 'debug-overdue-high',
+        title: 'Overdue High Priority',
+        description: 'This task should appear as overdue.',
+        priority: TaskPriority.high,
+        status: TaskStatus.pending,
+        createdAt: day(5),
+        dueDate: day(3),
+      ),
+
+      Task(
+        id: 'debug-overdue-medium',
+        title: 'Overdue Medium Priority',
+        priority: TaskPriority.medium,
+        status: TaskStatus.pending,
+        createdAt: day(4),
+        dueDate: day(2),
+      ),
+
+      Task(
+        id: 'debug-overdue-low',
+        title: 'Overdue Low Priority',
+        priority: TaskPriority.low,
+        status: TaskStatus.pending,
+        createdAt: day(3),
+        dueDate: day(1),
+      ),
+
+      // ─────────────────────────────────────────
+      // FUTURE PENDING TASKS
+      // ─────────────────────────────────────────
+      Task(
+        id: 'debug-future-high',
+        title: 'Future High Priority',
+        priority: TaskPriority.high,
+        status: TaskStatus.pending,
+        createdAt: now,
+        dueDate: now.add(const Duration(days: 2)),
+      ),
+
+      Task(
+        id: 'debug-future-medium',
+        title: 'Future Medium Priority',
+        priority: TaskPriority.medium,
+        status: TaskStatus.pending,
+        createdAt: now,
+        dueDate: now.add(const Duration(days: 3)),
+      ),
+    ];
+
+    state = AsyncData(tasks);
+  }
 }

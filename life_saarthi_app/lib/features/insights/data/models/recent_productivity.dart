@@ -5,15 +5,15 @@ class DailyProductivity {
   final int completedTasks;
 }
 
-class WeeklyProductivity {
-  const WeeklyProductivity({
-    required this.weekStart,
-    required this.weekEnd,
+class RecentProductivity {
+  const RecentProductivity({
+    required this.startDate,
+    required this.endDate,
     required this.dailyData,
   });
 
-  final DateTime weekStart;
-  final DateTime weekEnd;
+  final DateTime startDate;
+  final DateTime endDate;
   final List<DailyProductivity> dailyData;
 
   int get totalCompleted {

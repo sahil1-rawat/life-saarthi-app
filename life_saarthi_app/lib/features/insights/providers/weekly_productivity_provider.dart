@@ -1,12 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:life_saarthi_app/core/utils/app_logger_utils.dart';
-import 'package:life_saarthi_app/features/tasks/presentation/providers/task_notifier.dart';
+import 'package:life_saarthi_app/features/insights/data/models/recent_productivity.dart';
 
 import '../../tasks/data/models/task.dart';
-import '../data/models/weekly_productivity.dart';
-import '../data/models/weekly_productivity_calculator.dart';
+import '../../tasks/presentation/providers/task_notifier.dart';
+import '../data/models/insights_period.dart';
+import '../data/models/recent_productivity_calculator.dart';
+import 'insights_period_provider.dart';
 
-final weeklyProductivityProvider = Provider<WeeklyProductivity>((ref) {
+final weeklyProductivityProvider = Provider<RecentProductivity>((ref) {
+  final selectedPeriod = ref.watch(insightsPeriodProvider);
+
   final tasks = ref
       .watch(taskNotifierProvider)
       .when(
@@ -15,11 +18,11 @@ final weeklyProductivityProvider = Provider<WeeklyProductivity>((ref) {
         error: (_, _) => <Task>[],
       );
 
-  final result = WeeklyProductivityCalculator.calculate(tasks);
+  final days = switch (selectedPeriod) {
+    InsightsPeriod.sevenDays => 7,
+    InsightsPeriod.thirtyDays => 30,
+    InsightsPeriod.allTime => 30,
+  };
 
-  for (final day in result.dailyData) {
-    AppLogger.log('${day.date.day}/${day.date.month}: ${day.completedTasks}');
-  }
-
-  return result;
+  return RecentProductivityCalculator.calculate(tasks, days: days);
 });
