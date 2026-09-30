@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:life_saarthi_app/features/insights/data/models/insights_period.dart';
 
 import '../../data/models/recent_productivity.dart';
 
 class WeeklyProductivityChart extends StatefulWidget {
-  const WeeklyProductivityChart({super.key, required this.productivity});
+  const WeeklyProductivityChart({
+    super.key,
+    required this.productivity,
+    required this.period,
+  });
 
   final RecentProductivity productivity;
+  final InsightsPeriod period;
 
   @override
   State<WeeklyProductivityChart> createState() =>
@@ -50,7 +56,7 @@ class _WeeklyProductivityChartState extends State<WeeklyProductivityChart> {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        'Last 7 days',
+                        _periodLabel(widget.period),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -82,17 +88,29 @@ class _WeeklyProductivityChartState extends State<WeeklyProductivityChart> {
             const SizedBox(height: 12),
 
             // Chart
-            SizedBox(
-              height: 190,
-              width: double.infinity,
-              child: _ProductivityChart(
-                data: data,
-                selectedIndex: _selectedIndex,
-                onPointSelected: (index) {
-                  setState(() {
-                    _selectedIndex = index;
-                  });
-                },
+            TapRegion(
+              onTapOutside: (_) {
+                if (_selectedIndex == null) {
+                  return;
+                }
+
+                setState(() {
+                  _selectedIndex = null;
+                });
+              },
+              child: SizedBox(
+                height: 190,
+                width: double.infinity,
+                child: _ProductivityChart(
+                  data: data,
+                  selectedIndex: _selectedIndex,
+                  period: widget.period,
+                  onPointSelected: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                  },
+                ),
               ),
             ),
           ],
@@ -111,12 +129,13 @@ class _ProductivityChart extends StatelessWidget {
     required this.data,
     required this.selectedIndex,
     required this.onPointSelected,
+    required this.period,
   });
 
   final List<DailyProductivity> data;
   final int? selectedIndex;
   final ValueChanged<int> onPointSelected;
-
+  final InsightsPeriod period;
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -141,10 +160,12 @@ class _ProductivityChart extends StatelessWidget {
 
               onPointSelected(index);
             },
+
             child: CustomPaint(
               painter: _ProductivityPainter(
                 data: data,
                 selectedIndex: selectedIndex,
+                period: period,
                 theme: Theme.of(context),
               ),
               size: Size(constraints.maxWidth, constraints.maxHeight),
@@ -180,12 +201,13 @@ class _ProductivityPainter extends CustomPainter {
     required this.data,
     required this.selectedIndex,
     required this.theme,
+    required this.period,
   });
 
   final List<DailyProductivity> data;
   final int? selectedIndex;
   final ThemeData theme;
-
+  final InsightsPeriod period;
   static const double leftPadding = 22;
   static const double rightPadding = 10;
   static const double topPadding = 12;
@@ -249,6 +271,17 @@ class _ProductivityPainter extends CustomPainter {
     });
   }
 
+  bool _isCurrentPeriod(DateTime date) {
+    final now = DateTime.now();
+
+    if (period == InsightsPeriod.allTime) {
+      return date.year == now.year && date.month == now.month;
+    }
+
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
   // --------------------------------------------------------------------------
   // Grid
   // --------------------------------------------------------------------------
@@ -419,7 +452,7 @@ class _ProductivityPainter extends CustomPainter {
 
     final datePainter = TextPainter(
       text: TextSpan(
-        text: _formatDate(day.date),
+        text: _formatDate(day.date, period),
         style: theme.textTheme.labelSmall?.copyWith(
           color: theme.colorScheme.onInverseSurface,
           fontWeight: FontWeight.bold,
@@ -449,17 +482,23 @@ class _ProductivityPainter extends CustomPainter {
   // --------------------------------------------------------------------------
 
   void _drawXAxis(Canvas canvas, Size size, double chartWidth) {
-    for (var i = 0; i < data.length; i++) {
+    final labelCount = data.length <= 7 ? data.length : 7;
+
+    for (var labelIndex = 0; labelIndex < labelCount; labelIndex++) {
+      final index = data.length <= 7
+          ? labelIndex
+          : (labelIndex * (data.length - 1) / (labelCount - 1)).round();
+
       final x = data.length == 1
           ? leftPadding + chartWidth / 2
-          : leftPadding + (chartWidth * i / (data.length - 1));
+          : leftPadding + (chartWidth * index / (data.length - 1));
 
-      final isToday = _isToday(data[i].date);
-      final isSelected = i == selectedIndex;
+      final isToday = _isCurrentPeriod(data[index].date);
+      final isSelected = index == selectedIndex;
 
       final painter = TextPainter(
         text: TextSpan(
-          text: _shortWeekday(data[i].date.weekday),
+          text: _axisLabel(data[index].date),
           style: theme.textTheme.labelSmall?.copyWith(
             fontSize: 9,
             fontWeight: isToday || isSelected
@@ -485,7 +524,32 @@ class _ProductivityPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _ProductivityPainter oldDelegate) {
     return oldDelegate.selectedIndex != selectedIndex ||
-        oldDelegate.data != data;
+        oldDelegate.data != data ||
+        oldDelegate.period != period;
+  }
+
+  String _axisLabel(DateTime date) {
+    if (period == InsightsPeriod.allTime) {
+      final now = DateTime.now();
+
+      // Show year when crossing into a different year.
+      if (date.year != now.year) {
+        return "${_monthLabel(date.month)} '${date.year.toString().substring(2)}";
+      }
+
+      // January should show its year as well.
+      if (date.month == 1) {
+        return "${_monthLabel(date.month)} '${date.year.toString().substring(2)}";
+      }
+
+      return _monthLabel(date.month);
+    }
+
+    if (period == InsightsPeriod.thirtyDays) {
+      return '${date.day} ${_monthLabel(date.month)}';
+    }
+
+    return _shortWeekday(date.weekday);
   }
 
   // Used by tooltip positioning.
@@ -495,6 +559,18 @@ class _ProductivityPainter extends CustomPainter {
 // ============================================================================
 // Helpers
 // ============================================================================
+String _periodLabel(InsightsPeriod period) {
+  switch (period) {
+    case InsightsPeriod.sevenDays:
+      return 'Last 7 days';
+
+    case InsightsPeriod.thirtyDays:
+      return 'Last 30 days';
+
+    case InsightsPeriod.allTime:
+      return 'Last 12 Months';
+  }
+}
 
 bool _isToday(DateTime date) {
   final now = DateTime.now();
@@ -504,7 +580,11 @@ bool _isToday(DateTime date) {
       date.day == now.day;
 }
 
-String _formatDate(DateTime date) {
+String _formatDate(DateTime date, InsightsPeriod period) {
+  if (period == InsightsPeriod.allTime) {
+    return '${_monthLabel(date.month)} ${date.year}';
+  }
+
   return '${date.day} ${_monthLabel(date.month)}';
 }
 
@@ -512,6 +592,10 @@ String _shortWeekday(int weekday) {
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return weekdays[weekday - 1];
+}
+
+String _shortDate(DateTime date) {
+  return '${date.day} ${_monthLabel(date.month)}';
 }
 
 String _monthLabel(int month) {

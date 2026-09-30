@@ -160,10 +160,16 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
       return DateTime(date.year, date.month, date.day, 10, 0);
     }
 
+    DateTime month(int monthsAgo, int dayOfMonth) {
+      final date = DateTime(now.year, now.month - monthsAgo, dayOfMonth, 10, 0);
+
+      return date;
+    }
+
     final tasks = <Task>[
-      // ─────────────────────────────────────────
+      // ============================================================
       // CURRENT 12-DAY STREAK
-      // ─────────────────────────────────────────
+      // ============================================================
 
       for (var daysAgo = 0; daysAgo < 12; daysAgo++)
         Task(
@@ -176,9 +182,66 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
           completedAt: day(daysAgo),
         ),
 
-      // ─────────────────────────────────────────
-      // EXTRA COMPLETED TASKS
-      // ─────────────────────────────────────────
+      // ============================================================
+      // MONTHLY PRODUCTIVITY DATA
+      //
+      // 15 months of data.
+      //
+      // Current month     → 12 tasks
+      // 1 month ago       → 10 tasks
+      // 2 months ago      → 8 tasks
+      // 3 months ago      → 15 tasks
+      // 4 months ago      → 6 tasks
+      // 5 months ago      → 13 tasks
+      // 6 months ago      → 4 tasks
+      // 7 months ago      → 11 tasks
+      // 8 months ago      → 7 tasks
+      // 9 months ago      → 9 tasks
+      // 10 months ago     → 3 tasks
+      // 11 months ago     → 14 tasks
+      // 12 months ago     → 5 tasks
+      // 13 months ago     → 12 tasks
+      // 14 months ago     → 2 tasks
+      //
+      // Last 12 months should show only:
+      // monthsAgo = 0 ... 11
+      // ============================================================
+      ..._debugMonthlyTasks(month(0, 5), 12, 'current-month'),
+
+      ..._debugMonthlyTasks(month(1, 6), 10, 'month-1'),
+
+      ..._debugMonthlyTasks(month(2, 7), 8, 'month-2'),
+
+      ..._debugMonthlyTasks(month(3, 8), 15, 'month-3'),
+
+      ..._debugMonthlyTasks(month(4, 9), 6, 'month-4'),
+
+      ..._debugMonthlyTasks(month(5, 10), 13, 'month-5'),
+
+      ..._debugMonthlyTasks(month(6, 11), 4, 'month-6'),
+
+      ..._debugMonthlyTasks(month(7, 12), 11, 'month-7'),
+
+      ..._debugMonthlyTasks(month(8, 13), 7, 'month-8'),
+
+      ..._debugMonthlyTasks(month(9, 14), 9, 'month-9'),
+
+      ..._debugMonthlyTasks(month(10, 15), 3, 'month-10'),
+
+      ..._debugMonthlyTasks(month(11, 16), 14, 'month-11'),
+
+      // ============================================================
+      // THESE 3 SHOULD NOT APPEAR IN LAST 12 MONTHS
+      // ============================================================
+      ..._debugMonthlyTasks(month(12, 17), 5, 'old-month-12'),
+
+      ..._debugMonthlyTasks(month(13, 18), 12, 'old-month-13'),
+
+      ..._debugMonthlyTasks(month(14, 19), 2, 'old-month-14'),
+
+      // ============================================================
+      // EXTRA COMPLETED TASKS FOR CURRENT MONTH
+      // ============================================================
       Task(
         id: 'debug-today-1',
         title: 'Complete project work',
@@ -197,6 +260,9 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
         completedAt: day(0),
       ),
 
+      // ============================================================
+      // YESTERDAY
+      // ============================================================
       Task(
         id: 'debug-yesterday-1',
         title: 'Read documentation',
@@ -215,9 +281,9 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
         completedAt: day(1),
       ),
 
-      // ─────────────────────────────────────────
+      // ============================================================
       // OVERDUE TASKS
-      // ─────────────────────────────────────────
+      // ============================================================
       Task(
         id: 'debug-overdue-high',
         title: 'Overdue High Priority',
@@ -246,9 +312,9 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
         dueDate: day(1),
       ),
 
-      // ─────────────────────────────────────────
+      // ============================================================
       // FUTURE PENDING TASKS
-      // ─────────────────────────────────────────
+      // ============================================================
       Task(
         id: 'debug-future-high',
         title: 'Future High Priority',
@@ -269,5 +335,50 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
     ];
 
     state = AsyncData(tasks);
+  }
+
+  // ============================================================================
+  // DEBUG MONTHLY TASK GENERATOR
+  // ============================================================================
+
+  List<Task> _debugMonthlyTasks(
+    DateTime completedDate,
+    int count,
+    String prefix,
+  ) {
+    return List.generate(count, (index) {
+      return Task(
+        id: 'debug-$prefix-$index',
+        title: '${_debugMonthName(completedDate.month)} Task ${index + 1}',
+        description: 'Monthly productivity debug task',
+        priority: switch (index % 3) {
+          0 => TaskPriority.low,
+          1 => TaskPriority.medium,
+          _ => TaskPriority.high,
+        },
+        status: TaskStatus.completed,
+        createdAt: completedDate,
+        completedAt: completedDate,
+      );
+    });
+  }
+
+  String _debugMonthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return months[month - 1];
   }
 }

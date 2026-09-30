@@ -7,10 +7,6 @@ class InsightsTaskFilter {
     InsightsPeriod period, {
     DateTime? now,
   }) {
-    if (period == InsightsPeriod.allTime) {
-      return tasks;
-    }
-
     final currentDate = (now ?? DateTime.now()).toLocal();
 
     final today = DateTime(
@@ -18,6 +14,22 @@ class InsightsTaskFilter {
       currentDate.month,
       currentDate.day,
     );
+
+    // Last 12 months
+    if (period == InsightsPeriod.allTime) {
+      final currentMonth = DateTime(today.year, today.month);
+
+      final startMonth = DateTime(currentMonth.year, currentMonth.month - 11);
+
+      return tasks.where((task) {
+        final createdAt = task.createdAt.toLocal();
+
+        final taskMonth = DateTime(createdAt.year, createdAt.month);
+
+        return !taskMonth.isBefore(startMonth) &&
+            !taskMonth.isAfter(currentMonth);
+      }).toList();
+    }
 
     final days = switch (period) {
       InsightsPeriod.sevenDays => 7,

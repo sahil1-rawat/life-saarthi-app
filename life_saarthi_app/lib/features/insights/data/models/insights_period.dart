@@ -10,7 +10,7 @@ extension InsightsPeriodExtension on InsightsPeriod {
         return '30 Days';
 
       case InsightsPeriod.allTime:
-        return 'All Time';
+        return 'Last 12 Months';
     }
   }
 }

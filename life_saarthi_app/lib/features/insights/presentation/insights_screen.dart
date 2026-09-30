@@ -44,6 +44,7 @@ class InsightsScreen extends ConsumerWidget {
     final overdueAnalysis = OverdueAnalysisCalculator.calculate(tasks);
     final completionTrend = CompletionTrendCalculator.calculate(
       weeklyProductivity,
+      period: selectedPeriod,
     );
     return Scaffold(
       appBar: AppBar(title: const Text('Insights')),
@@ -118,10 +119,16 @@ class InsightsScreen extends ConsumerWidget {
                   value: '${statistics.completionRate.toStringAsFixed(0)}%',
                 ),
                 const SizedBox(height: 20),
-                WeeklyProductivityChart(productivity: weeklyProductivity),
+                WeeklyProductivityChart(
+                  productivity: weeklyProductivity,
+                  period: selectedPeriod,
+                ),
                 const SizedBox(height: 12),
 
-                ProductivitySummaryCard(summary: summary),
+                ProductivitySummaryCard(
+                  summary: summary,
+                  period: selectedPeriod,
+                ),
                 const SizedBox(height: 12),
 
                 PriorityBreakdownCard(breakdown: priorityBreakdown),
@@ -132,9 +139,12 @@ class InsightsScreen extends ConsumerWidget {
                 OverdueAnalysisCard(analysis: overdueAnalysis),
                 if (completionTrend.hasEnoughData) ...[
                   const SizedBox(height: 12),
-                  CompletionTrendCard(trend: completionTrend),
+                  CompletionTrendCard(
+                    trend: completionTrend,
+                    period: selectedPeriod,
+                  ),
                 ],
-                /* // Insert Testing Data
+                // Insert Testing Data
                 const SizedBox(height: 20),
 
                 OutlinedButton.icon(
@@ -145,7 +155,7 @@ class InsightsScreen extends ConsumerWidget {
                   },
                   icon: const Icon(Icons.science_outlined),
                   label: const Text('Load Test Insights Data'),
-                ), */
+                ),
               ],
             ),
     );
