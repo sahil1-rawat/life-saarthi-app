@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:life_saarthi_app/features/insights/data/models/insights_period.dart';
 
 import '../../data/models/productivity_consistency.dart';
 
 class ProductivityConsistencyCard extends StatelessWidget {
-  const ProductivityConsistencyCard({super.key, required this.consistency});
+  const ProductivityConsistencyCard({
+    super.key,
+    required this.consistency,
+    required this.period,
+  });
 
   final ProductivityConsistency consistency;
+  final InsightsPeriod period;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +34,7 @@ class ProductivityConsistencyCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'All time',
+                  period.label,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

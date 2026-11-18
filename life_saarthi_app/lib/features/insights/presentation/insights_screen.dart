@@ -39,7 +39,9 @@ class InsightsScreen extends ConsumerWidget {
         );
     final filteredTasks = InsightsTaskFilter.filter(tasks, selectedPeriod);
     final statistics = TaskStatisticsCalculator.calculate(filteredTasks);
-    final priorityBreakdown = PriorityBreakdownCalculator.calculate(tasks);
+    final priorityBreakdown = PriorityBreakdownCalculator.calculate(
+      filteredTasks,
+    );
     final consistency = ref.watch(productivityConsistencyProvider);
     final overdueAnalysis = OverdueAnalysisCalculator.calculate(tasks);
     final completionTrend = CompletionTrendCalculator.calculate(
@@ -104,7 +106,7 @@ class InsightsScreen extends ConsumerWidget {
                       InsightCard(
                         icon: Icons.warning_amber_rounded,
                         label: 'Overdue',
-                        value: statistics.overdue.toString(),
+                        value: overdueAnalysis.totalOverdue.toString(),
                       ),
                     ];
 
@@ -131,9 +133,15 @@ class InsightsScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                PriorityBreakdownCard(breakdown: priorityBreakdown),
+                PriorityBreakdownCard(
+                  breakdown: priorityBreakdown,
+                  period: selectedPeriod,
+                ),
                 const SizedBox(height: 12),
-                ProductivityConsistencyCard(consistency: consistency),
+                ProductivityConsistencyCard(
+                  consistency: consistency,
+                  period: selectedPeriod,
+                ),
                 const SizedBox(height: 12),
 
                 OverdueAnalysisCard(analysis: overdueAnalysis),

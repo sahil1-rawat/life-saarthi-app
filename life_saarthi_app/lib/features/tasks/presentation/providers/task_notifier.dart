@@ -308,7 +308,7 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
         title: 'Overdue Low Priority',
         priority: TaskPriority.low,
         status: TaskStatus.pending,
-        createdAt: day(3),
+        createdAt: day(100),
         dueDate: day(1),
       ),
 

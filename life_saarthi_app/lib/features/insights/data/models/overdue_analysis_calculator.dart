@@ -3,7 +3,13 @@ import 'overdue_analysis.dart';
 
 class OverdueAnalysisCalculator {
   static OverdueAnalysis calculate(List<Task> tasks, {DateTime? now}) {
-    final currentTime = now ?? DateTime.now();
+    final currentTime = (now ?? DateTime.now()).toLocal();
+
+    final today = DateTime(
+      currentTime.year,
+      currentTime.month,
+      currentTime.day,
+    );
 
     final overdueTasks = tasks.where((task) {
       if (task.status != TaskStatus.pending) {
@@ -16,7 +22,15 @@ class OverdueAnalysisCalculator {
         return false;
       }
 
-      return dueDate.isBefore(currentTime);
+      final localDueDate = dueDate.toLocal();
+
+      final dueDay = DateTime(
+        localDueDate.year,
+        localDueDate.month,
+        localDueDate.day,
+      );
+
+      return dueDay.isBefore(today);
     }).toList();
 
     var highPriority = 0;
@@ -28,11 +42,9 @@ class OverdueAnalysisCalculator {
         case TaskPriority.high:
           highPriority++;
           break;
-
         case TaskPriority.medium:
           mediumPriority++;
           break;
-
         case TaskPriority.low:
           lowPriority++;
           break;

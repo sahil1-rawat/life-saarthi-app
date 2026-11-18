@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:life_saarthi_app/features/insights/data/models/insights_period.dart';
 
 import '../../data/models/priority_breakdown.dart';
 
 class PriorityBreakdownCard extends StatelessWidget {
-  const PriorityBreakdownCard({super.key, required this.breakdown});
+  const PriorityBreakdownCard({
+    super.key,
+    required this.breakdown,
+    required this.period,
+  });
 
   final PriorityBreakdown breakdown;
+  final InsightsPeriod period;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +34,7 @@ class PriorityBreakdownCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'All time',
+                  period.label,
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
