@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../../../../core/services/time_service.dart';
 import '../../data/models/task.dart';
 import '../../data/repositories/task_repository.dart';
+import 'task_repository_provider.dart';
 
 final taskNotifierProvider = AsyncNotifierProvider<TaskNotifier, List<Task>>(
   TaskNotifier.new,
@@ -15,13 +16,13 @@ final taskMutationProvider = StateProvider.family<bool, String>(
 );
 
 class TaskNotifier extends AsyncNotifier<List<Task>> {
-  late final TaskRepository _repository;
+  TaskRepository get _repository => ref.read(taskRepositoryProvider);
 
   @override
   Future<List<Task>> build() async {
-    _repository = TaskRepository();
+    final repository = ref.watch(taskRepositoryProvider);
 
-    return _repository.getTasks();
+    return repository.getTasks();
   }
 
   // CHANGED:
@@ -45,17 +46,11 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
   }
 
   Future<void> addTask(Task task) async {
-    final currentTasks = state.value ?? [];
+    await _repository.insertTask(task);
 
-    try {
-      await _repository.insertTask(task);
+    final currentTasks = state.requireValue;
 
-      state = AsyncData([...currentTasks, task]);
-    } catch (error, stackTrace) {
-      state = AsyncError(error, stackTrace);
-
-      rethrow;
-    }
+    state = AsyncData([...currentTasks, task]);
   }
 
   Future<void> updateTask(Task updatedTask) async {
@@ -67,22 +62,18 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
       return;
     }
 
-    final currentTasks = state.value ?? [];
-
     mutationState.state = true;
 
     try {
       await _repository.updateTask(updatedTask);
+
+      final currentTasks = state.requireValue;
 
       state = AsyncData(
         currentTasks.map((task) {
           return task.id == updatedTask.id ? updatedTask : task;
         }).toList(),
       );
-    } catch (error) {
-      state = AsyncData(currentTasks);
-
-      rethrow;
     } finally {
       mutationState.state = false;
     }
@@ -95,11 +86,6 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
       return;
     }
 
-    final currentTasks = state.value ?? [];
-
-    // CHANGED:
-    // When completing a task, capture the server-authoritative
-    // time from TimeService.
     final updatedTask = task.isCompleted
         ? task.copyWith(status: TaskStatus.pending, clearCompletedAt: true)
         : task.copyWith(
@@ -112,15 +98,13 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
     try {
       await _repository.updateTask(updatedTask);
 
+      final currentTasks = state.requireValue;
+
       state = AsyncData(
         currentTasks.map((item) {
           return item.id == updatedTask.id ? updatedTask : item;
         }).toList(),
       );
-    } catch (error) {
-      state = AsyncData(currentTasks);
-
-      rethrow;
     } finally {
       mutationState.state = false;
     }
@@ -133,18 +117,14 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
       return;
     }
 
-    final currentTasks = state.value ?? [];
-
     mutationState.state = true;
 
     try {
       await _repository.deleteTask(id);
 
-      state = AsyncData(currentTasks.where((task) => task.id != id).toList());
-    } catch (error) {
-      state = AsyncData(currentTasks);
+      final currentTasks = state.requireValue;
 
-      rethrow;
+      state = AsyncData(currentTasks.where((task) => task.id != id).toList());
     } finally {
       mutationState.state = false;
     }
