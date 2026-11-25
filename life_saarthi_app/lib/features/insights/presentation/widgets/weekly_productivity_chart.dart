@@ -594,10 +594,6 @@ String _shortWeekday(int weekday) {
   return weekdays[weekday - 1];
 }
 
-String _shortDate(DateTime date) {
-  return '${date.day} ${_monthLabel(date.month)}';
-}
-
 String _monthLabel(int month) {
   const months = [
     'Jan',

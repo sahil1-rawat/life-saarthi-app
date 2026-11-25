@@ -1,40 +1,32 @@
 import '../../../core/services/time_service.dart';
 import '../data/models/task.dart';
+import 'task_date_utils.dart';
 
 enum TaskStatusFilter { all, pending, completed }
 
 enum TaskPriorityFilter { all, low, medium, high }
 
-// CHANGED: Added due-date filter categories.
 enum TaskDueDateFilter { all, today, tomorrow, upcoming, overdue, noDueDate }
 
 class TaskFilter {
   const TaskFilter({
     this.status = TaskStatusFilter.all,
     this.priority = TaskPriorityFilter.all,
-
-    // CHANGED: Default due-date filter is "all".
     this.dueDate = TaskDueDateFilter.all,
   });
 
   final TaskStatusFilter status;
   final TaskPriorityFilter priority;
-
-  // CHANGED: Stores selected due-date filter.
   final TaskDueDateFilter dueDate;
 
   TaskFilter copyWith({
     TaskStatusFilter? status,
     TaskPriorityFilter? priority,
-
-    // CHANGED: Added due-date support.
     TaskDueDateFilter? dueDate,
   }) {
     return TaskFilter(
       status: status ?? this.status,
       priority: priority ?? this.priority,
-
-      // CHANGED: Preserve existing due-date filter.
       dueDate: dueDate ?? this.dueDate,
     );
   }
@@ -42,13 +34,26 @@ class TaskFilter {
   bool get hasActiveFilters {
     return status != TaskStatusFilter.all ||
         priority != TaskPriorityFilter.all ||
-        // CHANGED: Due-date filter also makes filter active.
         dueDate != TaskDueDateFilter.all;
   }
 }
 
 abstract final class TaskFilterUtils {
-  static List<Task> apply(List<Task> tasks, TaskFilter filter) {
+  static List<Task> apply(
+    List<Task> tasks,
+    TaskFilter filter, {
+    DateTime? now,
+  }) {
+    final currentTime = (now ?? TimeService.instance.today).toLocal();
+
+    final today = DateTime(
+      currentTime.year,
+      currentTime.month,
+      currentTime.day,
+    );
+
+    final tomorrow = DateTime(today.year, today.month, today.day + 1);
+
     return tasks.where((task) {
       final matchesStatus = switch (filter.status) {
         TaskStatusFilter.all => true,
@@ -71,58 +76,31 @@ abstract final class TaskFilterUtils {
         return false;
       }
 
-      // CHANGED: Apply due-date filter.
+      final localDueDate = task.dueDate?.toLocal();
+
+      final dueDay = localDueDate == null
+          ? null
+          : DateTime(localDueDate.year, localDueDate.month, localDueDate.day);
+
       final matchesDueDate = switch (filter.dueDate) {
         TaskDueDateFilter.all => true,
 
-        TaskDueDateFilter.noDueDate => task.dueDate == null,
+        TaskDueDateFilter.noDueDate => dueDay == null,
 
-        TaskDueDateFilter.today =>
-          task.dueDate != null &&
-              TimeService.instance.isToday(task.dueDate!.toLocal()),
+        TaskDueDateFilter.today => dueDay == today,
 
-        TaskDueDateFilter.tomorrow =>
-          task.dueDate != null && _isTomorrow(task.dueDate!.toLocal()),
+        TaskDueDateFilter.tomorrow => dueDay == tomorrow,
 
         TaskDueDateFilter.upcoming =>
-          task.dueDate != null &&
-              !_isOverdue(task.dueDate!.toLocal()) &&
-              !_isToday(task.dueDate!.toLocal()) &&
-              !_isTomorrow(task.dueDate!.toLocal()),
+          dueDay != null && dueDay.isAfter(tomorrow),
 
-        // CHANGED:
-        // Completed tasks are intentionally excluded from
-        // the overdue filter because the app does not treat
-        // completed tasks as overdue.
-        TaskDueDateFilter.overdue =>
-          !task.isCompleted &&
-              task.dueDate != null &&
-              _isOverdue(task.dueDate!.toLocal()),
+        TaskDueDateFilter.overdue => TaskDateUtils.isOverdue(
+          task,
+          now: currentTime,
+        ),
       };
 
       return matchesDueDate;
     }).toList();
-  }
-
-  // CHANGED: Checks whether a date belongs to tomorrow.
-  static bool _isTomorrow(DateTime date) {
-    final tomorrow = TimeService.instance.today.add(const Duration(days: 1));
-
-    return date.year == tomorrow.year &&
-        date.month == tomorrow.month &&
-        date.day == tomorrow.day;
-  }
-
-  // CHANGED: Checks whether a date is before today.
-  //
-  // We compare against today's midnight because task due dates
-  // are treated as calendar dates rather than exact times.
-  static bool _isOverdue(DateTime date) {
-    return date.isBefore(TimeService.instance.today);
-  }
-
-  // CHANGED: Keeps the filtering logic readable and centralized.
-  static bool _isToday(DateTime date) {
-    return TimeService.instance.isToday(date);
   }
 }

@@ -150,6 +150,92 @@ class TaskNotifier extends AsyncNotifier<List<Task>> {
     }
   }
 
+  void loadDebugFilterData() {
+    final now = TimeService.instance.today.toLocal();
+
+    DateTime day(int offset) {
+      return DateTime(now.year, now.month, now.day + offset);
+    }
+
+    final tasks = <Task>[
+      // TEST A: Overdue pending task
+      Task(
+        id: 'debug-filter-a',
+        title: 'Test A - Overdue Pending',
+        description: 'Should appear in Overdue filter',
+        priority: TaskPriority.high,
+        status: TaskStatus.pending,
+        createdAt: day(-5),
+        dueDate: day(-1),
+      ),
+
+      // TEST B: Due today
+      Task(
+        id: 'debug-filter-b',
+        title: 'Test B - Due Today',
+        description: 'Should not be overdue',
+        priority: TaskPriority.medium,
+        status: TaskStatus.pending,
+        createdAt: day(-3),
+        dueDate: day(0),
+      ),
+
+      // TEST C: Due tomorrow
+      Task(
+        id: 'debug-filter-c',
+        title: 'Test C - Due Tomorrow',
+        priority: TaskPriority.low,
+        status: TaskStatus.pending,
+        createdAt: day(-2),
+        dueDate: day(1),
+      ),
+
+      // TEST D: Upcoming task
+      Task(
+        id: 'debug-filter-d',
+        title: 'Test D - Upcoming',
+        priority: TaskPriority.high,
+        status: TaskStatus.pending,
+        createdAt: day(-1),
+        dueDate: day(2),
+      ),
+
+      // TEST E: Completed task with past deadline
+      Task(
+        id: 'debug-filter-e',
+        title: 'Test E - Completed Past Deadline',
+        description: 'Should not appear in Overdue filter',
+        priority: TaskPriority.high,
+        status: TaskStatus.completed,
+        createdAt: day(-5),
+        dueDate: day(-1),
+        completedAt: day(0),
+      ),
+
+      // TEST F: No due date
+      Task(
+        id: 'debug-filter-f',
+        title: 'Test F - No Due Date',
+        priority: TaskPriority.medium,
+        status: TaskStatus.pending,
+        createdAt: day(-2),
+      ),
+
+      // TEST G: Completed task with future deadline
+      Task(
+        id: 'debug-filter-g',
+        title: 'Test G - Completed Tomorrow',
+        priority: TaskPriority.high,
+        status: TaskStatus.completed,
+        createdAt: day(-2),
+        dueDate: day(1),
+        completedAt: day(0),
+      ),
+    ];
+
+    state = AsyncData(tasks);
+  }
+
   // fn for loading testing data
   void loadDebugInsightsData() {
     final now = DateTime.now();

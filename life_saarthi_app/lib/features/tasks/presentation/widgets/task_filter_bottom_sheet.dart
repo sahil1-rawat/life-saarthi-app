@@ -72,7 +72,7 @@ class _TaskFilterBottomSheetState extends State<TaskFilterBottomSheet> {
     );
   }
 
-  Widget _buildTopHandle(BuildContext context) {
+  /*  Widget _buildTopHandle(BuildContext context) {
     final theme = Theme.of(context);
 
     return Padding(
@@ -86,7 +86,7 @@ class _TaskFilterBottomSheetState extends State<TaskFilterBottomSheet> {
         ),
       ),
     );
-  }
+  } */
 
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);

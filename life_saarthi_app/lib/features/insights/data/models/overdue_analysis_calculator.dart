@@ -1,36 +1,14 @@
+import 'package:life_saarthi_app/core/services/time_service.dart';
+
 import '../../../tasks/data/models/task.dart';
+import '../../../tasks/utils/task_date_utils.dart';
 import 'overdue_analysis.dart';
 
 class OverdueAnalysisCalculator {
   static OverdueAnalysis calculate(List<Task> tasks, {DateTime? now}) {
-    final currentTime = (now ?? DateTime.now()).toLocal();
-
-    final today = DateTime(
-      currentTime.year,
-      currentTime.month,
-      currentTime.day,
-    );
-
+    final currentTime = now ?? TimeService.instance.now;
     final overdueTasks = tasks.where((task) {
-      if (task.status != TaskStatus.pending) {
-        return false;
-      }
-
-      final dueDate = task.dueDate;
-
-      if (dueDate == null) {
-        return false;
-      }
-
-      final localDueDate = dueDate.toLocal();
-
-      final dueDay = DateTime(
-        localDueDate.year,
-        localDueDate.month,
-        localDueDate.day,
-      );
-
-      return dueDay.isBefore(today);
+      return TaskDateUtils.isOverdue(task, now: currentTime);
     }).toList();
 
     var highPriority = 0;

@@ -1,5 +1,6 @@
 import '../../../core/services/time_service.dart';
 import '../data/models/task.dart';
+import 'task_date_utils.dart';
 
 abstract final class TaskSortUtils {
   /// Returns a new list sorted using the default "Smart" task order.
@@ -10,64 +11,72 @@ abstract final class TaskSortUtils {
   /// 3. Pending upcoming tasks
   /// 4. Pending tasks without a due date
   /// 5. Completed tasks
-  ///
-  /// Within the same category:
-  /// - Higher priority comes first.
-  /// - Completed tasks are ordered by most recently completed.
-  static List<Task> sortSmart(List<Task> tasks) {
+  static List<Task> sortSmart(List<Task> tasks, {DateTime? now}) {
+    final currentTime = (now ?? TimeService.instance.today).toLocal();
+
+    final today = DateTime(
+      currentTime.year,
+      currentTime.month,
+      currentTime.day,
+    );
+
     final sortedTasks = List<Task>.from(tasks);
 
     sortedTasks.sort((a, b) {
-      final categoryComparison = _category(a).compareTo(_category(b));
+      final categoryComparison = _category(
+        a,
+        today,
+      ).compareTo(_category(b, today));
 
       if (categoryComparison != 0) {
         return categoryComparison;
       }
 
-      // CHANGED: Within the same category, higher priority comes first.
+      // Higher priority comes first within the same category.
       final priorityComparison = _priorityRank(b).compareTo(_priorityRank(a));
 
       if (priorityComparison != 0) {
         return priorityComparison;
       }
 
-      // CHANGED: Completed tasks show the most recently
-      // completed task first.
+      // Most recently completed first within the same priority.
       if (a.isCompleted && b.isCompleted) {
         final aCompleted = a.completedAt;
         final bCompleted = b.completedAt;
 
         if (aCompleted != null && bCompleted != null) {
-          return bCompleted.compareTo(aCompleted);
-        }
+          final completedComparison = bCompleted.compareTo(aCompleted);
 
-        if (aCompleted != null) {
+          if (completedComparison != 0) {
+            return completedComparison;
+          }
+        } else if (aCompleted != null) {
           return -1;
-        }
-
-        if (bCompleted != null) {
+        } else if (bCompleted != null) {
           return 1;
         }
       }
 
-      // CHANGED: For pending tasks with due dates,
-      // earlier due dates come first.
+      // Earlier due dates first within the same priority.
       if (!a.isCompleted &&
           !b.isCompleted &&
           a.dueDate != null &&
           b.dueDate != null) {
-        return a.dueDate!.compareTo(b.dueDate!);
+        final dueDateComparison = a.dueDate!.compareTo(b.dueDate!);
+
+        if (dueDateComparison != 0) {
+          return dueDateComparison;
+        }
       }
 
-      // Keep original creation order as the final tie-breaker.
+      // Earlier creation date as the final fallback.
       return a.createdAt.compareTo(b.createdAt);
     });
 
     return sortedTasks;
   }
 
-  static int _category(Task task) {
-    // CHANGED: Completed tasks always go below pending tasks.
+  static int _category(Task task, DateTime today) {
     if (task.isCompleted) {
       return 4;
     }
@@ -76,13 +85,20 @@ abstract final class TaskSortUtils {
       return 3;
     }
 
-    final dueDate = task.dueDate!.toLocal();
-
-    if (_isOverdue(dueDate)) {
+    // Use our shared overdue business rule.
+    if (TaskDateUtils.isOverdue(task, now: today)) {
       return 0;
     }
 
-    if (_isToday(dueDate)) {
+    final localDueDate = task.dueDate!.toLocal();
+
+    final dueDay = DateTime(
+      localDueDate.year,
+      localDueDate.month,
+      localDueDate.day,
+    );
+
+    if (dueDay == today) {
       return 1;
     }
 
@@ -98,13 +114,5 @@ abstract final class TaskSortUtils {
       case TaskPriority.low:
         return 1;
     }
-  }
-
-  static bool _isToday(DateTime date) {
-    return TimeService.instance.isToday(date);
-  }
-
-  static bool _isOverdue(DateTime date) {
-    return date.isBefore(TimeService.instance.today);
   }
 }

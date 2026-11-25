@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:life_saarthi_app/core/utils/date_time_utils.dart';
 import 'package:life_saarthi_app/core/widgets/task/task_priority_badge.dart';
 import 'package:life_saarthi_app/features/tasks/presentation/task_details_screen.dart';
 import 'package:life_saarthi_app/features/tasks/presentation/widgets/task_filter_bottom_sheet.dart';
+import 'package:life_saarthi_app/features/tasks/utils/task_date_utils.dart';
 import 'package:life_saarthi_app/features/tasks/utils/task_filter_utils.dart';
 import 'package:life_saarthi_app/features/tasks/utils/task_sort_utils.dart';
 
@@ -589,7 +589,7 @@ class _TaskTile extends StatelessWidget {
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
-                        DateTimeUtils.formatTaskDueDate(task.dueDate!),
+                        TaskDateUtils.formatTaskDueDate(task),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelMedium,

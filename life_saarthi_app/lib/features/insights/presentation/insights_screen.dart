@@ -159,7 +159,7 @@ class InsightsScreen extends ConsumerWidget {
                   onPressed: () {
                     ref
                         .read(taskNotifierProvider.notifier)
-                        .loadDebugInsightsData();
+                        .loadDebugFilterData();
                   },
                   icon: const Icon(Icons.science_outlined),
                   label: const Text('Load Test Insights Data'),
